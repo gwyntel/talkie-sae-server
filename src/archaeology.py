@@ -123,9 +123,9 @@ class Archaeology:
         # Compute SAE activations at last token position
         residual = captured["residual"].to(W_enc.dtype)
         # residual: [1, seq_len, hidden_dim]
-        # W_enc: [hidden_dim, n_features]
+        # W_enc: [n_features, hidden_dim] — need transpose for matmul
         last_hidden = residual[0, -1, :]  # [hidden_dim]
-        pre_acts = last_hidden @ W_enc + b_enc  # [n_features]
+        pre_acts = last_hidden @ W_enc.T + b_enc  # [n_features]
         acts = torch.nn.functional.relu(pre_acts)
 
         # Get all non-zero features
@@ -270,9 +270,8 @@ def main():
 
     print(f"Loaded {len(pairs)} pairs from {data_path}")
 
-    # Run archaeology
-    arch = modal.Cls.from_name("talkie-sae", "Archaeology")()
-    result = arch.run_archaeology.remote(pairs)
+    # Run archaeology — use the class directly since it's defined in this app
+    result = Archaeology().run_archaeology.remote(pairs)
 
     # Save results
     out_dir = "/home/hermes/talkie-sae-server/cache"
